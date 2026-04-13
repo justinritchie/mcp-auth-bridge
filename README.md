@@ -14,9 +14,9 @@ This started with a specific problem: getting Amazon's httpOnly auth cookies int
 
 | Site | What the MCP server does | Auth method |
 |------|--------------------------|-------------|
-| [PC Express](https://github.com/justinritchie/pcexpress-mcp-server) | Grocery shopping at Real Canadian Superstore. Search products, add to cart, reorder past purchases. | Bearer token + cart ID from API calls |
 | [Deku Deals](https://github.com/justinritchie/dekudeals-mcp-server) | Nintendo eShop deal tracking. Search games, check prices, manage wishlists, find sales. | Session cookie |
 | [Amazon](https://github.com/rigwild/mcp-server-amazon) | Product search, order history, wishlist management on Amazon.ca. | httpOnly auth cookies |
+| [PC Express](https://github.com/justinritchie/pcexpress-mcp-server) | Grocery shopping at Real Canadian Superstore. Search products, add to cart, reorder past purchases. Originally built by [FireBall1725](https://github.com/FireBall1725/pcexpress-mcp-server). | Bearer token + cart ID from API calls |
 
 The pattern works for any site where you log in through a browser. If the site uses cookies or bearer tokens (which is nearly all of them), you can add it.
 

@@ -41,6 +41,7 @@ async function renderSites() {
     const lastCapture = stored[`${siteKey}_last_capture`];
     const dotClass = lastCapture ? "green" : "gray";
     const statusText = lastCapture ? "Saved" : "Not captured";
+    const captureLabel = site.capture_method === "cookies" ? "session cookies" : "bearer + interceptor";
 
     let statsHTML = "";
     if (site.capture_method === "cookies") {
@@ -74,7 +75,7 @@ async function renderSites() {
       <div class="site-header">
         <span>
           <span class="site-name">${site.label}</span>
-          <span class="capture-type">${site.capture_method === 'cookies' ? 'cookies' : 'bearer'}</span>
+          <span class="capture-type">${captureLabel}</span>
         </span>
         <span class="status-badge">
           <span class="status-dot ${dotClass}" id="dot-${siteKey}"></span>
@@ -90,7 +91,7 @@ async function renderSites() {
         <button class="btn btn-primary" id="btn-save-${siteKey}" style="background:${color}">
           Save ${site.label}
         </button>
-        ${site.capture_method === 'bearer_intercept' ? `<button class="btn btn-secondary" id="btn-copy-${siteKey}" style="color:${color};border-color:${color}">Copy</button>` : ''}
+        <button class="btn btn-secondary" id="btn-copy-${siteKey}" style="color:${color};border-color:${color}" title="Copy captured credentials as JSON for diagnostics">Copy</button>
       </div>
       <div class="message" id="msg-${siteKey}"></div>
     `;
@@ -102,13 +103,10 @@ async function renderSites() {
       handleSave(siteKey, site);
     });
 
-    // Wire up copy button (only exists for bearer_intercept sites)
-    const copyBtn = document.getElementById(`btn-copy-${siteKey}`);
-    if (copyBtn) {
-      copyBtn.addEventListener("click", () => {
-        handleCopy(siteKey, site);
-      });
-    }
+    // Wire up copy button (diagnostic JSON copy for any site type)
+    document.getElementById(`btn-copy-${siteKey}`).addEventListener("click", () => {
+      handleCopy(siteKey, site);
+    });
 
     // If this is a bearer_intercept site, check for live token data on active tab
     if (site.capture_method === "bearer_intercept") {
@@ -209,7 +207,7 @@ async function handleCopy(siteKey, site) {
   if (site.capture_method === "bearer_intercept") {
     const tokenData = await getTokenFromTab(siteKey, site);
     if (!tokenData || !tokenData.at) {
-      showMsg(msgEl, `No token captured. Browse ${site.label} first.`, "error");
+      showMsg(msgEl, `No token on page. Browse ${site.label} first.`, "error");
       return;
     }
     payload = { bearer_token: tokenData.at };
@@ -220,15 +218,44 @@ async function handleCopy(siteKey, site) {
       }
     }
   } else {
-    // For cookie sites, show a message that copy isn't as useful
-    showMsg(msgEl, "Use Save to write cookies to disk. Copy isn't needed for cookie sites.", "error");
-    return;
+    // Cookie sites: fetch live cookies from Chrome and copy as JSON
+    try {
+      const allCookies = [];
+      for (const domain of site.domains) {
+        const cookies = await chrome.cookies.getAll({ domain });
+        allCookies.push(...cookies);
+      }
+      // Deduplicate by name
+      const seen = new Set();
+      const unique = allCookies.filter(c => {
+        if (seen.has(c.name)) return false;
+        seen.add(c.name);
+        return true;
+      });
+      // Filter to configured cookies if specified
+      let filtered = unique;
+      if (site.cookies && site.cookies.length > 0) {
+        filtered = unique.filter(c => site.cookies.includes(c.name));
+      }
+      if (filtered.length === 0) {
+        showMsg(msgEl, `No cookies found. Browse ${site.label} first.`, "error");
+        return;
+      }
+      payload = {};
+      for (const c of filtered) {
+        payload[c.name] = c.value.slice(0, 20) + "...";
+      }
+      payload._info = `${filtered.length} cookies from ${site.domains.join(", ")}`;
+    } catch (e) {
+      showMsg(msgEl, "Cookie read failed: " + (e.message || e), "error");
+      return;
+    }
   }
 
   const json = JSON.stringify(payload, null, 2);
   try {
     await navigator.clipboard.writeText(json);
-    showMsg(msgEl, "Copied JSON to clipboard", "success");
+    showMsg(msgEl, "Copied diagnostic JSON to clipboard", "success");
   } catch (e) {
     try {
       const ta = document.createElement("textarea");
@@ -237,7 +264,7 @@ async function handleCopy(siteKey, site) {
       ta.select();
       document.execCommand("copy");
       document.body.removeChild(ta);
-      showMsg(msgEl, "Copied JSON to clipboard", "success");
+      showMsg(msgEl, "Copied diagnostic JSON to clipboard", "success");
     } catch (err) {
       showMsg(msgEl, "Clipboard copy failed: " + (e.message || e), "error");
     }
@@ -317,3 +344,9 @@ function sendMsg(msg) {
 // ─── Init ───────────────────────────────────────────────────────────────────
 
 renderSites();
+
+// Open sites.json config in a new tab
+document.getElementById("open-config").addEventListener("click", (e) => {
+  e.preventDefault();
+  chrome.tabs.create({ url: chrome.runtime.getURL("sites.json") });
+});
