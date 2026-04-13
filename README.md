@@ -1,4 +1,4 @@
-# MCP Auth Bridge
+# MCP Auth Bridge — Let Your AI Shop For You
 
 Give your LLM access to your accounts. One click in Chrome, and your MCP servers can shop, browse, and manage services on your behalf.
 
