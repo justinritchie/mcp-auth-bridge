@@ -27,7 +27,7 @@ Captured credentials are sent to a native messaging host (Python script) that wr
 |------|--------|--------|------------|
 | Deku Deals | cookies | `~/.mcp-credentials/dekudeals.json` | [dekudeals-mcp-server](https://github.com/justinritchie/dekudeals-mcp-server) |
 | PC Express | bearer_intercept | `~/.mcp-credentials/pcexpress.json` + `.env` | [pcexpress-mcp-server](https://github.com/justinritchie/pcexpress-mcp-server) |
-| Amazon | cookies | `~/mcp-server-amazon/amazonCookies.json` | [mcp-server-amazon](https://github.com/justinritchie/mcp-server-amazon) |
+| Amazon | cookies | `~/mcp-server-amazon/amazonCookies.json` | [mcp-server-amazon](https://github.com/rigwild/mcp-server-amazon) |
 
 ## Setup
 
