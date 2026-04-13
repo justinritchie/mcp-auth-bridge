@@ -75,6 +75,24 @@ For cookie-based sites, add an entry to `sites.json` and reload the extension. N
 
 For bearer intercept sites, you'll also need to add content script matches in `manifest.json` and URL patterns in `content-scripts/token-interceptor.js`.
 
+### Ask Your AI to Add a Site
+
+The config is just JSON, so you can paste a prompt into Claude, ChatGPT, or whatever you use and have it write the entry for you. Here are some examples:
+
+**Cookie-based site (simplest case):**
+
+> I use MCP Auth Bridge to capture browser credentials for my MCP servers. Add a new cookie site to my sites.json for Best Buy Canada (bestbuy.ca). I need the session cookies so my MCP server can check order status and track prices. Use cookie_jar format and save to ~/.mcp-credentials/bestbuy.json. Use a blue color.
+
+**Cookie site where you need all cookie metadata:**
+
+> Add an entry to my MCP Auth Bridge sites.json for eBay (ebay.com, ebay.ca). I need the full cookie array including httpOnly flags and expiration dates because the MCP server replays the entire cookie jar. Use cookie_editor format, save to ~/mcp-server-ebay/cookies.json, and use an orange-red color.
+
+**Bearer token site with .env output:**
+
+> I'm adding Instacart to my MCP Auth Bridge setup. Instacart uses bearer tokens in its API calls (instacart.com, instacart.ca). I need bearer intercept with dotenv output to ~/instacart-mcp-server/.env. Map access_token to INSTACART_TOKEN. Also write a credential JSON file to ~/.mcp-credentials/instacart.json so my server can live-reload without parsing dotenv. Use a green color. Remind me what I need to change in manifest.json and token-interceptor.js too.
+
+Your AI will generate the JSON entry and, for bearer sites, walk you through the manifest and content script changes. The popup picks up new sites automatically when you reload the extension.
+
 ## Output Formats
 
 **cookie_jar** is a simple JSON object with cookie names and values, a domain, and a timestamp. Good for most MCP servers.
