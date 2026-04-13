@@ -1,0 +1,57 @@
+{
+  "manifest_version": 3,
+  "name": "MCP Auth Bridge",
+  "version": "1.0.0",
+  "description": "Config-driven credential capture for MCP servers — cookies, bearer tokens, and more",
+  "permissions": [
+    "cookies",
+    "activeTab",
+    "nativeMessaging",
+    "storage",
+    "scripting",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "*://*.dekudeals.com/*",
+    "*://*.pcexpress.ca/*",
+    "*://*.realcanadiansuperstore.ca/*",
+    "*://*.amazon.ca/*",
+    "*://*.amazon.com/*",
+    "*://*.amazon.co.uk/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.pcexpress.ca/*",
+        "*://*.realcanadiansuperstore.ca/*"
+      ],
+      "js": ["content-scripts/token-interceptor.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "*://*.pcexpress.ca/*",
+        "*://*.realcanadiansuperstore.ca/*"
+      ],
+      "js": ["content-scripts/bridge.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

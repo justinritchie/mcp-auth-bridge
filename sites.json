@@ -1,0 +1,46 @@
+{
+  "sites": {
+    "dekudeals": {
+      "label": "Deku Deals",
+      "domains": ["dekudeals.com", "www.dekudeals.com"],
+      "capture_method": "cookies",
+      "cookies": ["rack.session", "_deku_deals_session"],
+      "output_path": "~/.mcp-credentials/dekudeals.json",
+      "output_format": "cookie_jar",
+      "color": "#7c3aed"
+    },
+    "pcexpress": {
+      "label": "PC Express",
+      "domains": ["pcexpress.ca", "realcanadiansuperstore.ca"],
+      "capture_method": "bearer_intercept",
+      "token_url_patterns": ["pcexpress.ca"],
+      "oauth_url_patterns": ["oauth2", "update-token"],
+      "extra_fields": {
+        "cartId": { "source": "localStorage", "key": "lcl-cart-id-banner" }
+      },
+      "output_path": "~/pcexpress-mcp-server/.env",
+      "output_format": "dotenv",
+      "credential_file": "~/.mcp-credentials/pcexpress.json",
+      "dotenv_mapping": {
+        "access_token": "PCEXPRESS_BEARER_TOKEN",
+        "refresh_token": "PCEXPRESS_REFRESH_TOKEN",
+        "cartId": "PCEXPRESS_CART_ID"
+      },
+      "dotenv_defaults": {
+        "PCEXPRESS_CUSTOMER_ID": "",
+        "PCEXPRESS_STORE_ID": "1517",
+        "PCEXPRESS_BANNER": "superstore"
+      },
+      "color": "#e11d48"
+    },
+    "amazon": {
+      "label": "Amazon",
+      "domains": ["amazon.ca", "amazon.com", "amazon.co.uk"],
+      "capture_method": "cookies",
+      "required_cookies": ["at-*", "session-token"],
+      "output_path": "~/mcp-server-amazon/amazonCookies.json",
+      "output_format": "cookie_editor",
+      "color": "#f59e0b"
+    }
+  }
+}
