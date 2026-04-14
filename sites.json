@@ -41,6 +41,14 @@
       "output_path": "~/mcp-server-amazon/amazonCookies.json",
       "output_format": "cookie_editor",
       "color": "#f59e0b"
+    },
+    "aliexpress": {
+      "label": "AliExpress",
+      "domains": ["aliexpress.com", "www.aliexpress.com", "login.aliexpress.com"],
+      "capture_method": "cookies",
+      "output_path": "~/.mcp-credentials/aliexpress.json",
+      "output_format": "cookie_jar",
+      "color": "#ff4747"
     }
   }
 }
