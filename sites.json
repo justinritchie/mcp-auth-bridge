@@ -49,6 +49,21 @@
       "output_path": "~/.mcp-credentials/aliexpress.json",
       "output_format": "cookie_jar",
       "color": "#ff4747"
+    },
+    "roll20": {
+      "label": "Roll20",
+      "domains": ["app.roll20.net", "roll20.net"],
+      "capture_method": "firebase_idtoken",
+      "extra_fields": {
+        "database_url": { "source": "page", "via": "FIREBASE_ROOT" },
+        "campaign_path": { "source": "window", "key": "campaign_storage_path" },
+        "player_id": { "source": "window", "key": "d20_player_id" },
+        "default_character_id": { "source": "page", "via": "controlled_character" }
+      },
+      "output_path": "~/.mcp-credentials/roll20.json",
+      "output_format": "bearer_json",
+      "credential_type": "roll20",
+      "color": "#dc2626"
     }
   }
 }

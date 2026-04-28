@@ -41,7 +41,12 @@ async function renderSites() {
     const lastCapture = stored[`${siteKey}_last_capture`];
     const dotClass = lastCapture ? "green" : "gray";
     const statusText = lastCapture ? "Saved" : "Not captured";
-    const captureLabel = site.capture_method === "cookies" ? "session cookies" : "bearer + interceptor";
+    const captureLabels = {
+      cookies: "session cookies",
+      bearer_intercept: "bearer + interceptor",
+      firebase_idtoken: "Firebase ID token"
+    };
+    const captureLabel = captureLabels[site.capture_method] || site.capture_method;
 
     let statsHTML = "";
     if (site.capture_method === "cookies") {
@@ -51,11 +56,12 @@ async function renderSites() {
           <span>Cookies</span>
           <span class="value ${lastCapture ? 'ok' : ''}">${lastCapture ? count : '--'}</span>
         </div>`;
-    } else if (site.capture_method === "bearer_intercept") {
+    } else if (site.capture_method === "bearer_intercept" || site.capture_method === "firebase_idtoken") {
       const tokenLen = stored[`${siteKey}_token_length`] || "--";
+      const tokenLabel = site.capture_method === "firebase_idtoken" ? "Firebase ID token" : "Bearer token";
       statsHTML = `
         <div class="status-row">
-          <span>Bearer token</span>
+          <span>${tokenLabel}</span>
           <span class="value ${lastCapture ? 'ok' : ''}" id="stat-${siteKey}-token">${lastCapture ? tokenLen + ' chars' : '--'}</span>
         </div>`;
       // Show extra fields
@@ -108,8 +114,8 @@ async function renderSites() {
       handleCopy(siteKey, site);
     });
 
-    // If this is a bearer_intercept site, check for live token data on active tab
-    if (site.capture_method === "bearer_intercept") {
+    // If this is a bearer_intercept or firebase_idtoken site, check live token on active tab
+    if (site.capture_method === "bearer_intercept" || site.capture_method === "firebase_idtoken") {
       checkActiveTabForToken(siteKey, site);
     }
   }
@@ -125,13 +131,16 @@ async function handleSave(siteKey, site) {
 
   let tokenData = null;
 
-  // For bearer intercept sites, get live token from tab
-  if (site.capture_method === "bearer_intercept") {
+  // For bearer intercept and firebase_idtoken sites, get live token from tab
+  if (site.capture_method === "bearer_intercept" || site.capture_method === "firebase_idtoken") {
     tokenData = await getTokenFromTab(siteKey, site);
     if (!tokenData || !tokenData.at) {
       btn.disabled = false;
       btn.textContent = `Save ${site.label}`;
-      showMsg(msgEl, `No token captured. Browse ${site.label} first.`, "error");
+      const hint = site.capture_method === "firebase_idtoken"
+        ? `Open ${site.label} in a tab and make sure you're logged in.`
+        : `Browse ${site.label} first.`;
+      showMsg(msgEl, `No token captured. ${hint}`, "error");
       return;
     }
   }
@@ -204,10 +213,10 @@ async function handleCopy(siteKey, site) {
 
   let payload;
 
-  if (site.capture_method === "bearer_intercept") {
+  if (site.capture_method === "bearer_intercept" || site.capture_method === "firebase_idtoken") {
     const tokenData = await getTokenFromTab(siteKey, site);
     if (!tokenData || !tokenData.at) {
-      showMsg(msgEl, `No token on page. Browse ${site.label} first.`, "error");
+      showMsg(msgEl, `No token on page. Open ${site.label} first.`, "error");
       return;
     }
     payload = { bearer_token: tokenData.at };
@@ -283,6 +292,12 @@ async function getTokenFromTab(siteKey, site) {
     const matchesSite = site.domains.some(d => url.includes(d));
     if (!matchesSite) return null;
 
+    // firebase_idtoken sites: actively call getIdToken() and read window globals
+    if (site.capture_method === "firebase_idtoken") {
+      return await getFirebaseTokenFromTab(siteKey, site, tab.id);
+    }
+
+    // bearer_intercept sites: read passively-captured __MCP_TOKEN_DATA
     const results = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => window.__MCP_TOKEN_DATA,
@@ -303,6 +318,86 @@ async function getTokenFromTab(siteKey, site) {
       }
     }
   } catch (e) {}
+  return null;
+}
+
+// ─── Firebase ID token capture (for Roll20 etc.) ────────────────────────────
+//
+// Roll20 and similar Firebase-backed sites authenticate via short-lived ID
+// tokens minted via signInWithCustomToken. We can't catch them in fetch/XHR
+// because the data flows over WebSocket. Instead, when the user clicks Save
+// we run a small async script in the page's MAIN world that calls
+// firebase.auth().currentUser.getIdToken() and reads relevant window globals.
+async function getFirebaseTokenFromTab(siteKey, site, tabId) {
+  try {
+    const results = await chrome.scripting.executeScript({
+      target: { tabId },
+      world: "MAIN",
+      func: async () => {
+        try {
+          if (typeof firebase === "undefined" || !firebase.auth) {
+            return { error: "Firebase SDK not loaded on this page" };
+          }
+          const u = firebase.auth().currentUser;
+          if (!u) return { error: "No Firebase user — are you logged in?" };
+          const idToken = await u.getIdToken();
+          // Pull Roll20-specific page globals (no-op for non-Roll20 sites)
+          let dbUrl = null;
+          try {
+            if (typeof FIREBASE_ROOT !== "undefined" && FIREBASE_ROOT && FIREBASE_ROOT.toString) {
+              dbUrl = FIREBASE_ROOT.toString().replace(/\/$/, "");
+            }
+          } catch (e) {}
+          const campaign = typeof window.campaign_storage_path === "string"
+            ? window.campaign_storage_path : null;
+          const playerId = typeof window.d20_player_id === "string"
+            ? window.d20_player_id : null;
+          // Try to find a default character (one this player controls)
+          let defaultCharId = null;
+          try {
+            if (window.Campaign && window.Campaign.characters && playerId) {
+              const mine = window.Campaign.characters.models.filter(m => {
+                const cb = (m.get && m.get("controlledby")) || "";
+                return cb.includes(playerId);
+              });
+              if (mine.length > 0) defaultCharId = mine[0].id;
+            }
+          } catch (e) {}
+          return {
+            at: idToken,
+            uid: u.uid,
+            extra: {
+              database_url: dbUrl,
+              campaign_path: campaign,
+              player_id: playerId,
+              default_character_id: defaultCharId
+            }
+          };
+        } catch (e) {
+          return { error: String(e && e.message || e) };
+        }
+      }
+    });
+
+    if (results && results[0] && results[0].result) {
+      const d = results[0].result;
+      if (d.error) {
+        console.warn("[MCP Auth Bridge] Firebase capture:", d.error);
+        return null;
+      }
+      if (d.at) {
+        const tokenData = { at: d.at, rt: null };
+        if (d.extra) {
+          for (const [field, value] of Object.entries(d.extra)) {
+            if (value != null) tokenData[field] = value;
+          }
+        }
+        return tokenData;
+      }
+    }
+  } catch (e) {
+    console.warn("[MCP Auth Bridge] executeScript failed:", e);
+  }
   return null;
 }
 

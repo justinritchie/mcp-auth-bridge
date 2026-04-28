@@ -17,16 +17,19 @@ This started with a specific problem: getting Amazon's httpOnly auth cookies int
 | [Deku Deals](https://github.com/justinritchie/dekudeals-mcp-server) | Nintendo eShop deal tracking. Search games, check prices, manage wishlists, find sales. | Session cookie |
 | [Amazon](https://github.com/rigwild/mcp-server-amazon) | Product search, order history, wishlist management on Amazon.ca. | httpOnly auth cookies |
 | [PC Express](https://github.com/justinritchie/pcexpress-mcp-server) | Grocery shopping at Real Canadian Superstore. Search products, add to cart, reorder past purchases. Originally built by [FireBall1725](https://github.com/FireBall1725/pcexpress-mcp-server). | Bearer token + cart ID from API calls |
+| [Roll20](https://github.com/justinritchie/roll20-character-mcp-server) | Read a D&D character sheet and campaign data (handouts, chat) directly from Roll20's Firebase Realtime Database. | Firebase ID token (minted on-demand) |
 
-The pattern works for any site where you log in through a browser. If the site uses cookies or bearer tokens (which is nearly all of them), you can add it.
+The pattern works for any site where you log in through a browser. If the site uses cookies, bearer tokens, or a Firebase-style ID token (which covers nearly all of them), you can add it.
 
 ## How It Works
 
-You define sites in `sites.json`. Each entry specifies the domain, what kind of credentials to capture, and where to write them. Two capture methods:
+You define sites in `sites.json`. Each entry specifies the domain, what kind of credentials to capture, and where to write them. Three capture methods:
 
 **Cookies** grab session cookies via Chrome's `cookies` API, which can read httpOnly cookies that regular JavaScript can't touch. This is the simpler path and works for most sites.
 
 **Bearer intercept** patches `fetch()` and `XMLHttpRequest` on the page to capture OAuth tokens from API calls as they happen. More involved, but necessary for sites like PC Express where the token isn't in a cookie.
+
+**Firebase ID token** runs an on-demand script in the page to call `firebase.auth().currentUser.getIdToken()` and read relevant `window` globals. Useful for Firebase-backed sites (e.g. Roll20) where data flows over WebSocket and there's no Authorization header to intercept.
 
 When you click Save, the extension sends credentials to a native messaging host (a small Python script) that writes them to `~/.mcp-credentials/` in the right format. MCP servers read that file fresh on each call. No restarts, no config file juggling.
 
@@ -100,6 +103,8 @@ Your AI will generate the JSON entry and, for bearer sites, walk you through the
 **cookie_editor** writes the full cookie array in the format the Cookie-Editor browser extension uses. Useful when the MCP server needs all cookie metadata (expiration, httpOnly flags, etc.).
 
 **dotenv** writes a `.env` file with configurable variable mapping, plus an optional JSON credential file for servers that want live-reload without parsing dotenv.
+
+**bearer_json** writes a flat JSON file with `{type, access_token, <extra_fields…>, captured_at}`. Generic — extra fields from the site config flow through verbatim, so the MCP server just reads one file on startup. Used by Roll20.
 
 ## File Structure
 
