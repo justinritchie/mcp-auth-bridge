@@ -159,7 +159,8 @@ function handleBearerToken(siteKey, site, data) {
       output_path: site.output_path,
       access_token: data.at,
       refresh_token: data.rt || null,
-      extra_fields: {}
+      extra_fields: {},
+      credential_type: site.credential_type || siteKey
     };
 
     // Include any extra fields (like cartId)
@@ -231,8 +232,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
     }
 
-    if (site.capture_method === "bearer_intercept") {
-      // For bearer intercept, we need token data from the content script
+    if (site.capture_method === "bearer_intercept" || site.capture_method === "firebase_idtoken") {
+      // Both methods produce the same payload shape; route through handleBearerToken.
       if (message.tokenData) {
         handleBearerToken(siteKey, site, message.tokenData).then(result => {
           const storageData = {};
@@ -249,7 +250,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           sendResponse(result);
         });
       } else {
-        sendResponse({ success: false, error: `No token data. Browse ${site.label} first.` });
+        const hint = site.capture_method === "firebase_idtoken"
+          ? `Open ${site.label} in a tab and make sure you're logged in.`
+          : `Browse ${site.label} first.`;
+        sendResponse({ success: false, error: `No token data. ${hint}` });
       }
       return true;
     }

@@ -19,7 +19,8 @@
     "*://*.amazon.com/*",
     "*://*.amazon.co.uk/*",
     "*://*.aliexpress.com/*",
-    "*://*.login.aliexpress.com/*"
+    "*://*.login.aliexpress.com/*",
+    "*://*.roll20.net/*"
   ],
   "background": {
     "service_worker": "background.js"

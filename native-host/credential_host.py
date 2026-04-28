@@ -6,10 +6,11 @@ Generic credential writer driven by site config.
 Receives credential data from the Chrome extension and writes to the
 correct files based on output_format and output_path.
 
-Supports three output formats:
+Supports four output formats:
   - cookie_jar: Simple JSON {cookies: {name: value}, domain, captured_at}
   - cookie_editor: Full cookie array (Cookie-Editor compatible)
   - dotenv: .env file with configurable variable mapping
+  - bearer_json: Generic JSON {type, access_token, <extra_fields...>, captured_at}
 
 Native messaging protocol: 4-byte little-endian length prefix + JSON payload.
 """
@@ -195,6 +196,52 @@ def handle_dotenv(data):
     return result
 
 
+# ─── Bearer JSON Handler (generic, no per-site fields baked in) ─────────────
+
+def handle_bearer_json(data):
+    """
+    Write a bearer token + arbitrary extra fields to a flat JSON file.
+
+    Used for sites where the credential consumer is an MCP server that just
+    needs a JSON file to read on startup — no .env juggling, no site-specific
+    field mapping. Each site's `extra_fields` map flows through verbatim.
+    """
+    output_path = resolve_path(data.get("output_path", "~/.mcp-credentials/bearer.json"))
+    access_token = data.get("access_token", "")
+    refresh_token = data.get("refresh_token") or ""
+    extra_fields = data.get("extra_fields", {}) or {}
+    cred_type = data.get("credential_type") or data.get("site") or "bearer"
+
+    if not access_token or not access_token.startswith("eyJ"):
+        return {"success": False, "error": "Invalid or missing bearer token (expected JWT starting with eyJ)"}
+
+    payload = {
+        "type": cred_type,
+        "access_token": access_token,
+    }
+    if refresh_token:
+        payload["refresh_token"] = refresh_token
+    # Splat extra fields as top-level keys (campaign_path, player_id, etc.)
+    for k, v in extra_fields.items():
+        if v is not None and v != "":
+            payload[k] = v
+    payload["captured_at"] = datetime.now(timezone.utc).isoformat()
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+    try:
+        output_path.chmod(0o600)
+    except OSError:
+        pass
+
+    return {
+        "success": True,
+        "file": str(output_path),
+        "token_length": len(access_token),
+        "extra_field_count": sum(1 for v in extra_fields.values() if v not in (None, "")),
+    }
+
+
 # ─── Claude Desktop Config ───────────────────────────────────────────────────
 
 def update_claude_config(claude_config, env_values):
@@ -287,6 +334,8 @@ def main():
             result = handle_cookie_editor(message)
         elif output_format == "dotenv":
             result = handle_dotenv(message)
+        elif output_format == "bearer_json":
+            result = handle_bearer_json(message)
         else:
             result = {"success": False, "error": f"Unknown output_format: {output_format} for site: {site}"}
 
