@@ -38,7 +38,7 @@
       "domains": ["amazon.ca", "amazon.com", "amazon.co.uk"],
       "capture_method": "cookies",
       "required_cookies": ["at-*", "session-token"],
-      "output_path": "~/mcp-server-amazon/amazonCookies.json",
+      "output_path": "~/justinritchie-mcp-servers/mcp-server-amazon/amazonCookies.json",
       "output_format": "cookie_editor",
       "color": "#f59e0b"
     },
