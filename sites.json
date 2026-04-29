@@ -18,7 +18,7 @@
       "extra_fields": {
         "cartId": { "source": "localStorage", "key": "lcl-cart-id-banner" }
       },
-      "output_path": "~/pcexpress-mcp-server/.env",
+      "output_path": "~/justinritchie-mcp-servers/pcexpress-mcp-server/.env",
       "output_format": "dotenv",
       "credential_file": "~/.mcp-credentials/pcexpress.json",
       "dotenv_mapping": {
