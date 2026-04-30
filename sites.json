@@ -2,21 +2,38 @@
   "sites": {
     "dekudeals": {
       "label": "Deku Deals",
-      "domains": ["dekudeals.com", "www.dekudeals.com"],
+      "domains": [
+        "dekudeals.com",
+        "www.dekudeals.com"
+      ],
       "capture_method": "cookies",
-      "cookies": ["rack.session", "_deku_deals_session"],
+      "cookies": [
+        "rack.session",
+        "_deku_deals_session"
+      ],
       "output_path": "~/.mcp-credentials/dekudeals.json",
       "output_format": "cookie_jar",
       "color": "#7c3aed"
     },
     "pcexpress": {
       "label": "PC Express",
-      "domains": ["pcexpress.ca", "realcanadiansuperstore.ca"],
+      "domains": [
+        "pcexpress.ca",
+        "realcanadiansuperstore.ca"
+      ],
       "capture_method": "bearer_intercept",
-      "token_url_patterns": ["pcexpress.ca"],
-      "oauth_url_patterns": ["oauth2", "update-token"],
+      "token_url_patterns": [
+        "pcexpress.ca"
+      ],
+      "oauth_url_patterns": [
+        "oauth2",
+        "update-token"
+      ],
       "extra_fields": {
-        "cartId": { "source": "localStorage", "key": "lcl-cart-id-banner" }
+        "cartId": {
+          "source": "localStorage",
+          "key": "lcl-cart-id-banner"
+        }
       },
       "output_path": "~/justinritchie-mcp-servers/pcexpress-mcp-server/.env",
       "output_format": "dotenv",
@@ -33,18 +50,13 @@
       },
       "color": "#e11d48"
     },
-    "amazon": {
-      "label": "Amazon",
-      "domains": ["amazon.ca", "amazon.com", "amazon.co.uk"],
-      "capture_method": "cookies",
-      "required_cookies": ["at-*", "session-token"],
-      "output_path": "~/justinritchie-mcp-servers/mcp-server-amazon/amazonCookies.json",
-      "output_format": "cookie_editor",
-      "color": "#f59e0b"
-    },
     "aliexpress": {
       "label": "AliExpress",
-      "domains": ["aliexpress.com", "www.aliexpress.com", "login.aliexpress.com"],
+      "domains": [
+        "aliexpress.com",
+        "www.aliexpress.com",
+        "login.aliexpress.com"
+      ],
       "capture_method": "cookies",
       "output_path": "~/.mcp-credentials/aliexpress.json",
       "output_format": "cookie_jar",
@@ -52,18 +64,61 @@
     },
     "roll20": {
       "label": "Roll20",
-      "domains": ["app.roll20.net", "roll20.net"],
+      "domains": [
+        "app.roll20.net",
+        "roll20.net"
+      ],
       "capture_method": "firebase_idtoken",
       "extra_fields": {
-        "database_url": { "source": "page", "via": "FIREBASE_ROOT" },
-        "campaign_path": { "source": "window", "key": "campaign_storage_path" },
-        "player_id": { "source": "window", "key": "d20_player_id" },
-        "default_character_id": { "source": "page", "via": "controlled_character" }
+        "database_url": {
+          "source": "page",
+          "via": "FIREBASE_ROOT"
+        },
+        "campaign_path": {
+          "source": "window",
+          "key": "campaign_storage_path"
+        },
+        "player_id": {
+          "source": "window",
+          "key": "d20_player_id"
+        },
+        "default_character_id": {
+          "source": "page",
+          "via": "controlled_character"
+        }
       },
       "output_path": "~/.mcp-credentials/roll20.json",
       "output_format": "bearer_json",
       "credential_type": "roll20",
       "color": "#dc2626"
+    },
+    "amazon-ca": {
+      "label": "Amazon Canada",
+      "domains": [
+        "amazon.ca"
+      ],
+      "capture_method": "cookies",
+      "required_cookies": [
+        "at-*",
+        "session-token"
+      ],
+      "output_path": "~/.mcp-credentials/amazon-cookies.json",
+      "output_format": "cookie_editor",
+      "color": "#cc0000"
+    },
+    "amazon-us": {
+      "label": "Amazon USA",
+      "domains": [
+        "amazon.com"
+      ],
+      "capture_method": "cookies",
+      "required_cookies": [
+        "at-*",
+        "session-token"
+      ],
+      "output_path": "~/.mcp-credentials/amazon-cookies.json",
+      "output_format": "cookie_editor",
+      "color": "#f59e0b"
     }
   }
 }
