@@ -33,12 +33,21 @@
       },
       "color": "#e11d48"
     },
-    "amazon": {
-      "label": "Amazon",
-      "domains": ["amazon.ca", "amazon.com", "amazon.co.uk"],
+    "amazon-ca": {
+      "label": "Amazon Canada",
+      "domains": ["amazon.ca"],
       "capture_method": "cookies",
       "required_cookies": ["at-*", "session-token"],
-      "output_path": "~/mcp-server-amazon/amazonCookies.json",
+      "output_path": "~/.mcp-credentials/amazon-cookies.json",
+      "output_format": "cookie_editor",
+      "color": "#e53935"
+    },
+    "amazon-us": {
+      "label": "Amazon USA",
+      "domains": ["amazon.com"],
+      "capture_method": "cookies",
+      "required_cookies": ["at-*", "session-token"],
+      "output_path": "~/.mcp-credentials/amazon-cookies.json",
       "output_format": "cookie_editor",
       "color": "#f59e0b"
     },
